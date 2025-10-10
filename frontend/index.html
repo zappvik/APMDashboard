@@ -5,8 +5,13 @@
     <title>My APM Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; }
-        .chart-container { width: 80%; margin: 50px auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-wrap: wrap; justify-content: center; }
+        .chart-container { width: 40%; margin: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-container { width: 40%; margin: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;}
+        h2 { margin-top: 0; }
+        #appStatus { font-size: 4em; font-weight: bold; }
+        .status-ok { color: green; }
+        .status-error { color: red; }
     </style>
 </head>
 <body>
@@ -15,50 +20,64 @@
         <canvas id="cpuChart"></canvas>
     </div>
 
+    <div class="chart-container">
+        <h2>Memory Usage (%)</h2>
+        <canvas id="memChart"></canvas>
+    </div>
+
+    <div class="stat-container">
+        <h2>Application Status</h2>
+        <div id="appStatus">--</div>
+        <p>Checks http://localhost:3000</p>
+    </div>
+
     <script>
-        async function fetchData() {
+        // --- FUNCTION TO CREATE CPU CHART ---
+        async function renderCpuChart() {
             const response = await fetch('http://localhost:5000/api/cpu-data');
             const data = await response.json();
-
-            // The 'time' values will be used as simple labels instead of a true time-series
             const labels = data.map(item => new Date(item.time).toLocaleTimeString());
             const values = data.map(item => item.usage_user);
-
-            const ctx = document.getElementById('cpuChart').getContext('2d');
-            new Chart(ctx, {
+            new Chart(document.getElementById('cpuChart'), {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'User CPU Usage (%)',
-                        data: values,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1,
-                        fill: false
-                    }]
-                },
-                // This is the simplified options block that works reliably
-                options: {
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Usage (%)'
-                            }
-                        }
-                    }
-                }
+                data: { labels: labels, datasets: [{ label: 'User CPU Usage (%)', data: values, borderColor: 'rgb(75, 192, 192)', tension: 0.1 }] },
+                options: { scales: { y: { beginAtZero: true } } }
             });
         }
 
-        fetchData();
+        // --- FUNCTION TO CREATE MEMORY CHART ---
+        async function renderMemChart() {
+            const response = await fetch('http://localhost:5000/api/mem-data');
+            const data = await response.json();
+            const labels = data.map(item => new Date(item.time).toLocaleTimeString());
+            const values = data.map(item => item.used_percent);
+            new Chart(document.getElementById('memChart'), {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'Memory Used (%)', data: values, borderColor: 'rgb(255, 99, 132)', tension: 0.1 }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        // --- FUNCTION TO UPDATE APP STATUS ---
+        async function updateAppStatus() {
+            const response = await fetch('http://localhost:5000/api/status-data');
+            const data = await response.json();
+            const statusEl = document.getElementById('appStatus');
+            statusEl.textContent = data.status;
+            if (data.status === 200) {
+                statusEl.className = 'status-ok';
+            } else {
+                statusEl.className = 'status-error';
+            }
+        }
+
+        // --- LOAD ALL DATA ON PAGE LOAD ---
+        renderCpuChart();
+        renderMemChart();
+        updateAppStatus();
+        
+        // Refresh status every 10 seconds
+        setInterval(updateAppStatus, 10000);
     </script>
 </body>
 </html>
