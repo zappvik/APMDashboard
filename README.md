@@ -6,7 +6,7 @@ A full-stack case study project developed to demonstrate a complete data pipelin
 
 ## 1. Project Overview
 
-This project implements a lightweight Application Performance Monitoring (APM) system from the ground up. The primary goal is to simulate a professional monitoring environment by continuously collecting system metrics (CPU and memory usage), storing this time-series data efficiently, and visualizing it on a custom-built, real-time web dashboard.
+This project implements a lightweight Application Performance Monitoring (APM) system from the ground up. The primary goal is to simulate a professional monitoring environment by continuously collecting system metrics (CPU and memory usage) and application health, storing this time-series data efficiently, and visualizing it on a multi-panel, custom-built, real-time web dashboard.
 
 The architecture was designed to be modular, scalable, and utilize industry-standard open-source tools. It serves as a practical demonstration of handling time-series data, building a backend API, and creating a dynamic frontend visualization.
 
@@ -20,8 +20,8 @@ The data flows through a four-stage pipeline, from collection to visualization. 
 
 1.  **Data Ingestion (Telegraf):** A server agent that collects metrics from the host system at a regular interval.
 2.  **Database (TimescaleDB on Docker):** A PostgreSQL database extended with TimescaleDB for efficient time-series data storage and querying. It runs in a Docker container for portability.
-3.  **Backend API (Python & Flask):** A lightweight web server that exposes a JSON API endpoint. It queries the database for recent data when requested by the frontend.
-4.  **Frontend (HTML, JS, Chart.js):** A static, client-side webpage that periodically fetches data from the backend API and renders it as a live chart.
+3.  **Backend API (Python & Flask):** A lightweight web server that exposes JSON API endpoints. It queries the database for recent data when requested by the frontend.
+4.  **Frontend (HTML, JS, Chart.js):** A static, client-side webpage that periodically fetches data from the backend API and renders it as multiple live charts and status panels.
 
 ---
 
@@ -43,7 +43,7 @@ This project integrates several key technologies from different areas of softwar
 
 ## 4. Final Dashboard
 
-The final output is a clean, simple web dashboard that visualizes the collected CPU data over time.
+The final output is a clean, multi-panel web dashboard that visualizes the collected CPU usage, memory usage, and the live status of a target application.
 
 ![Dashboard Screenshot](dashboard_screenshot.png)
 
@@ -102,27 +102,27 @@ Navigate to the `frontend` directory and open the `index.html` file in your pref
 
 -----
 
-## 6\. API Endpoint
+## 6\. API Endpoints
 
-The backend provides one simple API endpoint.
+The backend provides three simple API endpoints.
 
 ### `GET /api/cpu-data`
 
-  * **Description:** Retrieves the last 10 minutes of `usage_user` CPU data from the database.
+  * **Description:** Retrieves the last 10 minutes of `usage_user` CPU data.
+  * **Response:** A JSON array of objects.
 
-  * **Response:** A JSON array of objects, where each object contains a `time` and `usage_user` key.
+### `GET /api/mem-data`
 
-  * **Sample Response:**
+  * **Description:** Retrieves the last 10 minutes of `used_percent` memory data.
+  * **Response:** A JSON array of objects.
 
+### `GET /api/status-data`
+
+  * **Description:** Retrieves the last known status code from the `http_response` health check.
+  * **Response:** A JSON object with a single status key. A value of `200` would indicate success. Other numbers indicate a failure.
+  * **Sample Response (Failure):**
     ```json
-    [
-        {
-            "time": "2025-10-10T14:30:00.000Z",
-            "usage_user": 5.7
-        },
-        {
-            "time": "2025-10-10T14:30:10.000Z",
-            "usage_user": 6.1
-        }
-    ]
+    {
+        "status": 3
+    }
     ```
