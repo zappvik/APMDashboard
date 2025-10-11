@@ -2,72 +2,297 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My APM Dashboard</title>
+    <title>APM System Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-wrap: wrap; justify-content: center; }
-        .chart-container { width: 40%; margin: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .stat-container { width: 40%; margin: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;}
-        h2 { margin-top: 0; }
-        #appStatus { font-size: 4em; font-weight: bold; }
-        #statusDescription { margin-top: 0; margin-bottom: 20px; min-height: 20px; }
-        .status-ok { color: green; }
-        .status-error { color: red; }
-        .button-container button { font-size: 1em; padding: 10px 20px; margin: 0 10px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        @keyframes pulse-cyan {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 51, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+        }
+
+        :root {
+            --bg-color: #101419;
+            --panel-bg: #1c2128;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --accent-cyan: #00FFFF;
+            --accent-red: #ff3366;
+            --grid-line-color: rgba(255, 255, 255, 0.05);
+            --font-family: 'Roboto Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+                linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 1.5rem;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .stat-card {
+            grid-column: 1 / -1;
+            text-align: center;
+            min-height: auto;
+            justify-content: center;
+        }
+        
+        .health-check { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        .status-display { text-align: center; }
+        .button-container { margin-top: 1rem; }
+        
+        #appStatus { font-size: 4rem; font-weight: 700; line-height: 1; margin-top: 10px; }
+        .status-ok { color: var(--accent-cyan); }
+        .status-error { color: var(--accent-red); }
+        #statusDescription { color: var(--text-secondary); min-height: 1.2em; }
+        .button-container button {
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: #21262d;
+            color: var(--text-primary);
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .button-container button:hover {
+            background-color: #30363d;
+            border-color: var(--accent-cyan);
+        }
+        .status-light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+        .status-light.online { background-color: var(--accent-cyan); animation: pulse-cyan 1.5s infinite; }
+        .status-light.offline { background-color: var(--accent-red); animation: pulse-red 1.5s infinite; }
+        .status-light.idle { background-color: var(--text-secondary); }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="chart-container"><h2>CPU Usage</h2><canvas id="cpuChart"></canvas></div>
-    <div class="chart-container"><h2>Memory Usage (%)</h2><canvas id="memChart"></canvas></div>
-
-    <div class="stat-container">
-        <h2>Live Application Health Check</h2>
-        <div id="appStatus">--</div>
-        <p id="statusDescription">Click a button to check a port's status.</p>
-        <div class="button-container">
-            <button onclick="checkStatus(3000)">Check Port 3000 (Will Fail)</button>
-            <button onclick="checkStatus(5000)">Check Port 5000 (Will Succeed)</button>
+    <h1>SYSTEM PERFORMANCE MONITOR</h1>
+    <main>
+        <div class="card">
+            <h2>CPU Utilization</h2>
+            <div class="chart-wrapper">
+                <canvas id="cpuChart"></canvas>
+            </div>
         </div>
-    </div>
+
+        <div class="card">
+            <h2>Memory Usage (%)</h2>
+            <div class="chart-wrapper">
+                <canvas id="memChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card stat-card">
+            <h2>Live Application Health Check</h2>
+            <div class="health-check">
+                <div class="status-display">
+                    <div id="statusLight" class="status-light idle"></div>
+                    <div id="appStatus">--</div>
+                    <p id="statusDescription">Click a button to check status</p>
+                </div>
+                <div class="button-container">
+                    <button onclick="checkStatus(3000)">Check Port 3000 (Will Fail)</button>
+                    <button onclick="checkStatus(5000)">Check Port 5000 (Will Succeed)</button>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
-        // --- FUNCTION TO CREATE CHARTS ---
-        async function renderChart(canvasId, apiUrl, label, color) {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            const labels = data.map(item => new Date(item.time).toLocaleTimeString());
-            const values = data.map(item => item[Object.keys(item)[1]]);
-            new Chart(document.getElementById(canvasId), {
+        const chartInstances = {};
+        Chart.defaults.color = "var(--text-secondary)";
+
+        const chartOptions = {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                    ticks: { color: "var(--text-secondary)" }
+                },
+                x: {
+                    type: 'time',
+                    time: { unit: 'second', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss' } },
+                    grid: { display: false },
+                    ticks: { color: "var(--text-secondary)", maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            },
+        };
+
+        function createChart(canvasId, label, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            chartInstances[canvasId] = new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: [{ label: label, data: values, borderColor: color, tension: 0.1 }] },
-                options: { scales: { y: { beginAtZero: true } } }
+                data: {
+                    datasets: [{
+                        label: label,
+                        borderColor: color,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            const colorRGB = hexToRgb(color);
+                            gradient.addColorStop(0, `rgba(${colorRGB.r}, ${colorRGB.g}, ${colorRGB.b}, 0)`);
+                            gradient.addColorStop(1, `rgba(${colorRGB.r}, ${colorRGB.g}, ${colorRGB.b}, 0.4)`);
+                            return gradient;
+                        },
+                        tension: 0.3,
+                        pointRadius: 0,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: chartOptions
             });
         }
 
-        // --- UPDATED FUNCTION TO CHECK STATUS AND ADD DESCRIPTION ---
+        async function updateChart(canvasId, apiUrl, fieldName) {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const chart = chartInstances[canvasId];
+                
+                chart.data.datasets[0].data = data.map(item => ({ x: new Date(item.time), y: item[fieldName] }));
+                chart.update('none');
+            } catch (error) {
+                console.error(`Failed to update chart ${canvasId}:`, error);
+            }
+        }
+        
         async function checkStatus(port) {
-            const response = await fetch(`http://localhost:5000/api/check-port/${port}`);
-            const data = await response.json();
             const statusEl = document.getElementById('appStatus');
             const descriptionEl = document.getElementById('statusDescription');
-
-            statusEl.textContent = data.status;
-
-            if (data.status === 200) {
-                statusEl.className = 'status-ok';
-                descriptionEl.textContent = "Success: The service is online and responding.";
-            } else if (data.status === 503) {
+            const lightEl = document.getElementById('statusLight');
+            try {
+                const response = await fetch(`http://localhost:5000/api/check-port/${port}`);
+                const data = await response.json();
+                statusEl.textContent = data.status;
+                if (data.status === 200) {
+                    statusEl.className = 'status-ok';
+                    lightEl.className = 'status-light online';
+                    descriptionEl.textContent = "Service is online and responding.";
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = '503';
                 statusEl.className = 'status-error';
-                descriptionEl.textContent = "Error: Service unavailable. The port is closed or not responding.";
-            } else {
-                statusEl.className = 'status-error';
-                descriptionEl.textContent = `An unexpected error occurred: ${data.message}`;
+                lightEl.className = 'status-light offline';
+                descriptionEl.textContent = "Service unavailable or not responding.";
             }
         }
 
-        // --- LOAD CHARTS ON PAGE LOAD ---
-        renderChart('cpuChart', 'http://localhost:5000/api/cpu-data', 'User CPU Usage (%)', 'rgb(75, 192, 192)');
-        renderChart('memChart', 'http://localhost:5000/api/mem-data', 'Memory Used (%)', 'rgb(255, 99, 132)');
+        const hexToRgb = (hex) => {
+            let c;
+            if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                c = hex.substring(1).split('');
+                if (c.length == 3) {
+                    c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c = '0x' + c.join('');
+                return { r: (c >> 16) & 255, g: (c >> 8) & 255, b: c & 255 };
+            }
+            throw new Error('Bad Hex');
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- FIX IS HERE ---
+            // Read the computed color values from CSS first
+            const cyanColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan').trim();
+            const redColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim();
+
+            // Pass the resolved hex codes to the charts
+            createChart('cpuChart', 'CPU Usage', cyanColor);
+            createChart('memChart', 'Memory Usage', redColor);
+
+            const updateAllCharts = () => {
+                updateChart('cpuChart', 'http://localhost:5000/api/cpu-data', 'usage_user');
+                updateChart('memChart', 'http://localhost:5000/api/mem-data', 'used_percent');
+            };
+
+            updateAllCharts();
+            setInterval(updateAllCharts, 2000);
+        });
+
     </script>
 </body>
 </html>
