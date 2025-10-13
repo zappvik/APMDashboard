@@ -102,27 +102,39 @@ Navigate to the `frontend` directory and open the `index.html` file in your pref
 
 -----
 
-## 6\. API Endpoints
+---
 
-The backend provides three simple API endpoints.
+## 6. API Endpoints
+
+The backend provides three API endpoints to serve data to the frontend.
 
 ### `GET /api/cpu-data`
 
-  * **Description:** Retrieves the last 10 minutes of `usage_user` CPU data.
-  * **Response:** A JSON array of objects.
+* **Description:** Retrieves the last 10 minutes of `usage_user` CPU data.
+* **Response:** A JSON array of objects.
 
 ### `GET /api/mem-data`
 
-  * **Description:** Retrieves the last 10 minutes of `used_percent` memory data.
-  * **Response:** A JSON array of objects.
+* **Description:** Retrieves the last 10 minutes of `used_percent` memory data.
+* **Response:** A JSON array of objects.
 
-### `GET /api/status-data`
+### `GET /api/check-port/<port>`
 
-  * **Description:** Retrieves the last known status code from the `http_response` health check.
-  * **Response:** A JSON object with a single status key. A value of `200` would indicate success. Other numbers indicate a failure.
-  * **Sample Response (Failure):**
+* **Description:** Performs a live health check on a given port on `localhost` to see if a service is running. This is used for the interactive health check panel.
+* **Response:** A JSON object indicating the status.
+* **Sample Response (Success):**
     ```json
     {
-        "status": 3
+        "status": 200,
+        "port": 5000,
+        "message": "OK"
+    }
+    ```
+* **Sample Response (Failure):**
+    ```json
+    {
+        "status": 503,
+        "port": 3000,
+        "message": "Service Unavailable"
     }
     ```
