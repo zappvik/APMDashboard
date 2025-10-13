@@ -134,6 +134,7 @@
                 grid-template-columns: 1fr;
             }
         }
+
     </style>
 </head>
 <body>
@@ -171,21 +172,26 @@
 
     <script>
         const chartInstances = {};
-        Chart.defaults.color = "var(--text-secondary)";
+        
+        // --- THIS IS THE PRIMARY FIX ---
+        // Get the computed primary text color from CSS after the page loads
+        const primaryTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        // Set the global default color for all chart text to the actual color string
+        Chart.defaults.color = primaryTextColor;
+        // --- END FIX ---
 
         const chartOptions = {
             maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255, 255, 255, 0.08)' },
-                    ticks: { color: "var(--text-secondary)" }
+                    grid: { color: 'rgba(255, 255, 255, 0.08)' }
                 },
                 x: {
                     type: 'time',
                     time: { unit: 'second', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss' } },
                     grid: { display: false },
-                    ticks: { color: "var(--text-secondary)", maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+                    ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
                 }
             },
             plugins: {
@@ -271,16 +277,15 @@
                 c = '0x' + c.join('');
                 return { r: (c >> 16) & 255, g: (c >> 8) & 255, b: c & 255 };
             }
-            throw new Error('Bad Hex');
+            const colorName = hex.replace('var(', '').replace(')', '');
+            const computedColor = getComputedStyle(document.documentElement).getPropertyValue(colorName).trim();
+            return hexToRgb(computedColor);
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- FIX IS HERE ---
-            // Read the computed color values from CSS first
             const cyanColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan').trim();
             const redColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim();
 
-            // Pass the resolved hex codes to the charts
             createChart('cpuChart', 'CPU Usage', cyanColor);
             createChart('memChart', 'Memory Usage', redColor);
 
