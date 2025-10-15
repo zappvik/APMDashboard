@@ -23,9 +23,16 @@ def get_db_connection():
 def get_cpu_data():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT time, usage_user FROM cpu WHERE time > NOW() - INTERVAL '10 minutes' ORDER BY time ASC;"
-    )
+    # --- CORRECTED QUERY IS HERE ---
+    cur.execute("""
+        SELECT
+            time_bucket_gapfill('5 seconds', time, now() - interval '10 minutes', now()) as time,
+            COALESCE(AVG(usage_user), 0) as usage_user
+        FROM cpu
+        WHERE time > NOW() - INTERVAL '10 minutes'
+        GROUP BY 1
+        ORDER BY 1 ASC;
+    """)
     raw_data = cur.fetchall()
     column_names = [desc[0] for desc in cur.description]
     results = [dict(zip(column_names, row)) for row in raw_data]
@@ -38,9 +45,16 @@ def get_cpu_data():
 def get_mem_data():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT time, used_percent FROM mem WHERE time > NOW() - INTERVAL '10 minutes' ORDER BY time ASC;"
-    )
+    # --- CORRECTED QUERY IS HERE ---
+    cur.execute("""
+        SELECT
+            time_bucket_gapfill('5 seconds', time, now() - interval '10 minutes', now()) as time,
+            COALESCE(AVG(used_percent), 0) as used_percent
+        FROM mem
+        WHERE time > NOW() - INTERVAL '10 minutes'
+        GROUP BY 1
+        ORDER BY 1 ASC;
+    """)
     raw_data = cur.fetchall()
     column_names = [desc[0] for desc in cur.description]
     results = [dict(zip(column_names, row)) for row in raw_data]
