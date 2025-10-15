@@ -100,8 +100,6 @@ The server will be running on `http://127.0.0.1:5000`.
 
 Navigate to the `frontend` directory and open the `index.html` file in your preferred web browser. The chart will load automatically.
 
------
-
 ---
 
 ## 6. API Endpoints
@@ -138,3 +136,15 @@ The backend provides three API endpoints to serve data to the frontend.
         "message": "Service Unavailable"
     }
     ```
+
+---
+
+## 7. Key Learnings and Optimizations
+
+Throughout this project, several key challenges and optimizations were addressed:
+
+* **Handling High-Frequency Data:** The initial implementation collected data every second and sent all raw points to the frontend. This created a visually "noisy" and jagged chart that was difficult to interpret.
+
+* **Solution: Backend Aggregation:** To solve this, the backend API was optimized. Instead of querying raw data, the SQL query was updated to use TimescaleDB's `time_bucket_gapfill()` function. This aggregates the 1-second data into cleaner 5-second averages directly in the database. This is a common and highly efficient technique in real-world time-series applications, as it reduces the amount of data sent over the network and makes the visualization much clearer.
+
+* **Live Health Checks:** The application status panel was improved from simply reading historical data to performing a live, dynamic health check via a socket connection in the Python backend. This demonstrates a more robust and immediate failure detection mechanism.
