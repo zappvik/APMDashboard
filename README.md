@@ -45,7 +45,7 @@ This project integrates several key technologies from different areas of softwar
 
 The final output is a clean, multi-panel web dashboard that visualizes the collected CPU usage, memory usage, and the live status of a target application.
 
-![Dashboard Screenshot](dashboard_screenshot.png)
+
 
 ---
 
